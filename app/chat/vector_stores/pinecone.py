@@ -1,14 +1,10 @@
 import os
-import pinecone
 from langchain.vectorstores import Pinecone
 from app.chat.embeddings.openai import embeddings
 
-pinecone.init(
-  api_key=os.getenv("PINECONE_API_KEY"),
-  environment=os.getenv("PINECONE_ENV_NAME")
-)
-
+# pinecone-client 3.x removed pinecone.init(). LangChain's from_existing_index
+# creates Pinecone(api_key=...) itself when the SDK is v3+.
 vectorstore = Pinecone.from_existing_index(
-  os.getenv("PINECONE_INDEX_NAME"),
-  embeddings
+    os.getenv("PINECONE_INDEX_NAME"),
+    embeddings,
 )
