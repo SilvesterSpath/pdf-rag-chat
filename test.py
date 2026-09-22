@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-chat = ChatOpenAI()
+chat = ChatOpenAI(streaming=True)
 
 prompt = ChatPromptTemplate.from_messages([
   ("human", "{content}")
@@ -13,6 +13,8 @@ prompt = ChatPromptTemplate.from_messages([
 
 messages = prompt.format_messages(content="Tell me a joke")
 
-output = chat(messages)
+for message in chat.stream(messages):
+  print(message.content)
+# output = chat.__call__(messages)
+# output = chat.invoke(messages)
 
-print(output.content)
