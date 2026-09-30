@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from queue import Queue
 from threading import Thread
 
-
 load_dotenv()
 
 class StreamingHandler(BaseCallbackHandler):
@@ -30,7 +29,7 @@ prompt = ChatPromptTemplate.from_messages([
     ("human", "{content}")
 ])
 
-class StreamingChain(LLMChain):
+class StreamableChain:
     def stream(self, input):
         queue = Queue()
         handler = StreamingHandler(queue)
@@ -46,6 +45,9 @@ class StreamingChain(LLMChain):
             if token is None:
                 break
             yield token
+
+class StreamingChain(StreamableChain, LLMChain):
+    pass
 
 chain = StreamingChain(llm=chat, prompt=prompt)
 
