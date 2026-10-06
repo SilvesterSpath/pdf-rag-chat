@@ -6,4 +6,3 @@ memory_map = {
 }
 
 memory = memory_map["sql_buffer_memory"]
-memory(chat_args)

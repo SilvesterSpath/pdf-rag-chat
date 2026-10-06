@@ -9,4 +9,3 @@ retriever_map = {
 }
 
 retriever = retriever_map["pinecone_2"]
-retriever(chat_args)
