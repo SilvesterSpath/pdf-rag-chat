@@ -20,13 +20,17 @@ This repo is a personal learning build: the product shell (auth, documents, view
 ```mermaid
 flowchart LR
   Browser[Browser / SvelteKit UI]
-  Flask[Flask API :8000]
+  Flask[Flask API :8888]
   SQLite[(SQLite)]
   Redis[(Redis queue)]
   Worker[Celery worker]
-  Files[Object storage]
-  Pinecone[(Pinecone)]
-  OpenAI[OpenAI]
+  subgraph External["External"]
+    Files[Object storage Fly]
+    Pinecone[(Pinecone vectors)]
+    OpenAI[OpenAI]
+  end
+
+
 
   Browser --> Flask
   Flask --> SQLite
@@ -35,18 +39,19 @@ flowchart LR
   Redis --> Worker
   Worker --> Files
   Worker --> Pinecone
+  Worker --> OpenAI
   Flask --> OpenAI
   Flask --> Pinecone
 ```
 
-| Piece | Role |
-| --- | --- |
-| `client/` | SvelteKit + Tailwind UI (static build served by Flask) |
-| `app/web/` | Flask API, sessions, SQLAlchemy models |
-| `app/celery/` | Worker process |
-| `app/chat/` | RAG: embeddings, chain, Langfuse scores |
-| Redis | Celery broker — **software you run locally**, not a required cloud account |
-| File storage | HTTP upload/download service (`UPLOAD_URL`). PDFs are not stored in SQLite. |
+| Piece         | Role                                                                        |
+| ------------- | --------------------------------------------------------------------------- |
+| `client/`     | SvelteKit + Tailwind UI (static build served by Flask)                      |
+| `app/web/`    | Flask API, sessions, SQLAlchemy models                                      |
+| `app/celery/` | Worker process                                                              |
+| `app/chat/`   | RAG: embeddings, chain, Langfuse scores                                     |
+| Redis         | Celery broker — **software you run locally**, not a required cloud account  |
+| File storage  | HTTP upload/download service (`UPLOAD_URL`). PDFs are not stored in SQLite. |
 
 Three processes must run together: **Flask**, **the worker**, and **Redis**. Stop any one of them and uploads or background jobs will fail.
 
@@ -93,13 +98,13 @@ LANGFUSE_PUBLIC_KEY=
 LANGFUSE_SECRET_KEY=
 ```
 
-| Variable | Required to boot | Notes |
-| --- | --- | --- |
-| `SECRET_KEY` | yes | Flask sessions |
-| `SQLALCHEMY_DATABASE_URI` | yes | Local SQLite is fine for development |
-| `UPLOAD_URL` | yes | Base URL of the file API (`POST /upload`, `GET /download/<id>`) |
-| `REDIS_URI` | for the worker | e.g. `redis://localhost:6379` |
-| OpenAI / Pinecone / Langfuse | for RAG | Leave empty until you implement `app/chat/` |
+| Variable                     | Required to boot | Notes                                                           |
+| ---------------------------- | ---------------- | --------------------------------------------------------------- |
+| `SECRET_KEY`                 | yes              | Flask sessions                                                  |
+| `SQLALCHEMY_DATABASE_URI`    | yes              | Local SQLite is fine for development                            |
+| `UPLOAD_URL`                 | yes              | Base URL of the file API (`POST /upload`, `GET /download/<id>`) |
+| `REDIS_URI`                  | for the worker   | e.g. `redis://localhost:6379`                                   |
+| OpenAI / Pinecone / Langfuse | for RAG          | Leave empty until you implement `app/chat/`                     |
 
 On some Windows machines port **6379 is reserved**. If Docker cannot bind it, publish another host port and set `REDIS_URI` to match (for example `redis://localhost:16379` with `-p 127.0.0.1:16379:6379`).
 

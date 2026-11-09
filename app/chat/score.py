@@ -1,4 +1,36 @@
 from app.chat.redis import client
+import random
+def random_component_by_score(component_type, component_map):
+    # Make sure component_type is 'llm', 'retriever', or 'memory'
+    if component_type not in ['llm', 'retriever', 'memory']:
+        raise ValueError(f"Invalid component type: {component_type}")
+
+    # From redis, get the hash containing the sum total scores for the given component_type
+    values = client.hgetall(f"{component_type}_score_values")
+
+    # From redis, get the hash containing the number of times each component has been boed on
+    counts = client.hgetall(f"{component_type}_score_counts")
+
+    # Get all the valid coponent names from the component map
+    names = component_map.keys()
+    # Loop over those valid names and  use them to calculate the average score for each component    
+    # Add average score to a dictionary
+    avg_scores = {}
+    for name in names:
+        score = int(values.get(name, 1))
+        count = int(counts.get(name, 1))
+        avg_score = score / count
+        avg_scores[name] = max(avg_score, 0.1)
+
+    # Do a weighted random selection
+    sum_scores = sum(avg_scores.values())
+    random_val = random.uniform(0, sum_scores)
+    cumulative = 0
+    for name, score in avg_scores.items():
+        cumulative += score
+        if cumulative >= random_val:
+            return name
+    return None
 
 def score_conversation(
     conversation_id: str, score: float, llm: str, retriever: str, memory: str
@@ -14,9 +46,7 @@ def score_conversation(
 
     client.zadd("llm_scores", {llm: score})
     client.zadd("retriever_scores", {retriever: score})
-    client.zadd("memory_scores", {memory: score})
-
-    
+    client.zadd("memory_scores", {memory: score})    
 
 
 def get_scores():

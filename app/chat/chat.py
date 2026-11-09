@@ -8,17 +8,17 @@ from app.chat.chains.retrieval import StreamingConversationalRetrievalChain
 from app.web.api import (
     set_conversation_components,
     get_conversation_components
-
 )
+from app.chat.score import random_component_by_score
 
 def select_component(component_type, component_map, chat_args):
     components = get_conversation_components(chat_args.conversation_id)
     previous_component = components[component_type]
-    if previous_component:
+    if previous_component and previous_component in component_map:
         builder = component_map[previous_component]
         return previous_component, builder(chat_args)
     else:
-        random_component = random.choice(list(component_map.keys()))
+        random_component = random_component_by_score(component_type, component_map)
         builder = component_map[random_component]
         return random_component, builder(chat_args)
 
@@ -50,7 +50,10 @@ def build_chat(chat_args: ChatArgs):
         memory=memory_name
     )
 
-    condense_question_llm=ChatOpenAI(streaming=False)
+    condense_question_llm = ChatOpenAI(
+        streaming=False,
+        model_name="gpt-4o-mini",
+    )
 
     return StreamingConversationalRetrievalChain.from_llm(
         llm=llm,
