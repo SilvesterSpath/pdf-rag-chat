@@ -50,6 +50,19 @@ def score_conversation(
 
 
 def get_scores():
+    aggregate = {"llm": {}, "retriever": {}, "memory": {}}
+    for component_type in ["llm", "retriever", "memory"]:
+        values = client.hgetall(f"{component_type}_score_values")
+        counts = client.hgetall(f"{component_type}_score_counts")
+        names = values.keys()
+        
+        for name in names:
+            score = int(values.get(name, 1))
+            count = int(counts.get(name, 1))
+            avg_score = score / count
+            aggregate[component_type][name] = [avg_score]
+    return aggregate
+
     """
     Retrieves and organizes scores from the langfuse client for different component types and names.
     The scores are categorized and aggregated in a nested dictionary format where the outer key represents
@@ -64,12 +77,12 @@ def get_scores():
 
         {
             'llm': {
-                'chatopenai-3.5-turbo': [score1, score2],
-                'chatopenai-4': [score3, score4]
+                'chatopenai-3.5-turbo': [avg_score],
+                'chatopenai-4': [avg_score]
             },
-            'retriever': { 'pinecone_store': [score5, score6] },
-            'memory': { 'persist_memory': [score7, score8] }
+            'retriever': { 'pinecone_store': [avg_score] },
+            'memory': { 'persist_memory': [avg_score] }
         }
     """
 
-    pass
+    
