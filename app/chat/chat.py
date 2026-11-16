@@ -10,6 +10,8 @@ from app.web.api import (
     get_conversation_components
 )
 from app.chat.score import random_component_by_score
+from app.chat.tracing.langfuse import langfuse
+from langfuse.client import CreateTrace
 
 def select_component(component_type, component_map, chat_args):
     components = get_conversation_components(chat_args.conversation_id)
@@ -55,10 +57,18 @@ def build_chat(chat_args: ChatArgs):
         model_name="gpt-4o-mini",
     )
 
+    trace = langfuse.trace(
+        CreateTrace(
+            id=chat_args.conversation_id,
+            metadata=chat_args.metadata,
+        )
+    )
+
     return StreamingConversationalRetrievalChain.from_llm(
         llm=llm,
         condense_question_llm=condense_question_llm,
         retriever=retriever,
         memory=memory,
+        callbacks=[trace.getNewHandler()]
     )    
     pass
